@@ -142,10 +142,14 @@ namespace CS_Homework_08_CardGame
         static void Main(string[] args)
         {
             Game game = new Game(4);
+            while(true)
+            {
+                game.MakeTurn();
+            }
+            /*game.MakeTurn();
             game.MakeTurn();
             game.MakeTurn();
-            game.MakeTurn();
-            game.MakeTurn();
+            game.MakeTurn();*/
 
             Console.ReadLine();
         }
