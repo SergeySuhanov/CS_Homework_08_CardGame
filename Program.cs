@@ -9,7 +9,9 @@ namespace CS_Homework_08_CardGame
 {
     public class Game
     {
-        Player[] Players;
+        public bool IsRunning;
+        string[] names = { "Ace", "Base", "Cali", "Dude", "Eugene", "Fido", "Gary", "Hugo", "Ilya", "Jim", "Kim", "Luis" };
+        List<Player> Players;
         int Order;
         Karta[] Deck;
         public string[] Suit = { "Hearts", "Diamonds", "Clubs", "Spades" };
@@ -18,7 +20,8 @@ namespace CS_Homework_08_CardGame
 
         public Game(int playerCount)
         {
-            Players = new Player[playerCount];
+            IsRunning = true;
+            Players = new List<Player>(playerCount);
             Order = 0;
             CardsOnTable = new Queue<Karta>(playerCount);
             Deck = new Karta[36];
@@ -30,19 +33,21 @@ namespace CS_Homework_08_CardGame
 
         public void MakePlayers()
         {
-            for (int i = 0; i < Players.Length; i++)
+            for (int i = 0; i < Players.Capacity; i++)
             {
-                Players[i] = new Player();
+                Players.Add(new Player(names[i]));
+                //Players[i] = new Player();
             }
         }
         public void CreateDeck()
         {
             int index = 0;
+            string[] rankNames = { "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace" };
             for (int i = 0; i < Suit.Length; i++)
             {
                 for (int j = 0; j < Rank.Length; j++)
                 {
-                    Deck[index++] = new Karta(Suit[i], Rank[j]);
+                    Deck[index++] = new Karta(Suit[i], Rank[j], rankNames[j]);
                 }
             }
         }
@@ -66,62 +71,82 @@ namespace CS_Homework_08_CardGame
             int toWho;
             for (int i = 0; i < Deck.Length; i++)
             {
-                toWho = i % Players.Length;
+                toWho = i % Players.Count;
                 Players[toWho].Hand.Enqueue(Deck[i]);
             }
         }
         public void MakeTurn()
         {
-            Console.WriteLine($"\tNew Turn. Player {Order + 1} starts...");
+            Console.WriteLine($"--------------------------------------------------------");
+            Console.WriteLine($"\tNew Turn. Player \"{Players[Order].Name}\" starts...");
+
             Karta currentMaxCard = Players[Order].Hand.Peek();
             int leadingPlayer = Order;
             int currPlayer;
 
-            for (int i = 0; i < Players.Length; i++)
+            for (int i = 0; i < Players.Count; i++)
             {
                 // who lay card now
-                currPlayer = (Order + i) % Players.Length;
+                currPlayer = (Order + i) % Players.Count;
 
                 if (Players[currPlayer].Hand.Count > 0)
                 {
-                    // is his card currently the biggest
+                    // is his card currently the biggest?
                     if (currentMaxCard.Rank < Players[currPlayer].Hand.Peek().Rank)
                     {
                         currentMaxCard = Players[currPlayer].Hand.Peek();
                         leadingPlayer = currPlayer;
                     }
                     // lay card on table
-                    Console.WriteLine($"Player {currPlayer + 1} is laying card: {Players[currPlayer].Hand.Peek().Rank} of {Players[currPlayer].Hand.Peek().Suit}");
+                    Console.WriteLine($"Player {Players[currPlayer].Name} is laying card: {Players[currPlayer].Hand.Peek().RankName} of {Players[currPlayer].Hand.Peek().Suit}");
                     CardsOnTable.Enqueue(Players[currPlayer].Hand.Dequeue());
                 }
             }
 
             // Give cards to leading player
-            Console.Write($"\nPlayer {leadingPlayer + 1} takes");
+            Console.Write($"\nPlayer {Players[leadingPlayer].Name} takes");
             while (CardsOnTable.Count > 0)
             {
-                Console.Write($" | {CardsOnTable.Peek().Rank} of {CardsOnTable.Peek().Suit} | ");
+                Console.Write($" | {CardsOnTable.Peek().RankName} of {CardsOnTable.Peek().Suit} | ");
                 Players[leadingPlayer].Hand.Enqueue(CardsOnTable.Dequeue());
             }
             Console.WriteLine("\n");
 
             Console.WriteLine("Current standings:");
-            for (int i = 0; i < Players.Length; i++)
+            for (int i = 0; i < Players.Count; i++)
             {
-                Console.WriteLine($"Player {i + 1} owns {Players[i].Hand.Count} cards");
+                Console.WriteLine($"Player {Players[i].Name} owns {Players[i].Hand.Count} cards");
+
+                // If player owns all cards, declared as winner
+                if (Players[i].Hand.Count == 36)
+                {
+                    Console.WriteLine($"Player {Players[i].Name} Wins the game.");
+                    IsRunning = false;
+                    Console.ReadLine();
+                }
+
+                // Player that own no cards, leaves the game
+                if (Players[i].Hand.Count == 0)
+                {
+                    Console.WriteLine($"Player {Players[i].Name} leaves the game.");
+                    Players.RemoveAt(i);
+                    Console.ReadLine();
+                }
             }
-            Console.WriteLine("\n");
+            Console.WriteLine();
 
             // next turn another player will start first
-            Order = (Order + 1) % Players.Length;
+            Order = (Order + 1) % Players.Count;
         }
     }
 
     public class Player
     {
+        public string Name;
         public Queue<Karta> Hand;
-        public Player()
+        public Player(string name)
         {
+            Name = name;
             Hand = new Queue<Karta>(36);
         }
     }
@@ -130,10 +155,12 @@ namespace CS_Homework_08_CardGame
     {
         public string Suit;
         public int Rank;
-        public Karta(string suit, int rank)
+        public string RankName;
+        public Karta(string suit, int rank, string rankName)
         {
             Suit = suit;
             Rank = rank;
+            RankName = rankName;
         }
     }
 
@@ -142,14 +169,12 @@ namespace CS_Homework_08_CardGame
         static void Main(string[] args)
         {
             Game game = new Game(4);
-            while(true)
+
+            while(game.IsRunning)
             {
                 game.MakeTurn();
+                Console.ReadLine();
             }
-            /*game.MakeTurn();
-            game.MakeTurn();
-            game.MakeTurn();
-            game.MakeTurn();*/
 
             Console.ReadLine();
         }
